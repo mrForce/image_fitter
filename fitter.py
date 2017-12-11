@@ -124,12 +124,24 @@ for i in range(0, num_pages):
         page_image = Image.new('RGB', (page.width_pixels, page.height_pixels))
         for j in range(0, len(rectangles)):
             rectangle = rectangles[j]
+            print(rectangle)
             x = int(rectangle[0])
             y = int(rectangle[1])
-            new_width = int(rectangle[2])
-            new_height = int(rectangle[3])
-            resized_image = fitter_images[j].getPILImage().resize((new_width, new_height))
-            page_image.paste(resized_image, (x, y))
+            new_width = rectangle[2]
+            new_height = rectangle[3]
+            old_width = 1.0*fitter_images[j].width
+            old_height = 1.0*fitter_images[j].height
+            flipped = False
+            if (old_width/old_height > 1.0 and new_width/new_height < 1.0) or (old_width/old_height < 1.0 and new_width/new_height > 1.0):
+                flipped = True
+                print('flipped!')
+            name = fitter_images[j].name
+            print('fitter image: {0}, had w/h of: {1}, now it is: {2}'.format(name, 1.0*fitter_images[j].width/fitter_images[j].height, 1.0*new_width/new_height))
+            image = fitter_images[j].getPILImage()
+            if flipped:
+                image = image.rotate(90, expand=True)
+            resized_image = image.resize((int(new_width), int(new_height)))
+            page_image.paste(resized_image, (x, page.height_pixels - (y + int(new_height))))
         page_image.save('page_{0}.jpg'.format(i))
             
             

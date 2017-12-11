@@ -1,0 +1,10 @@
+The point of this program is to take k images, and pack them onto n pages.
+
+It relies on Python Pillow and this library: https://github.com/Mxbonn/strip-packing/
+
+TODO
+1) Write a utility that will take an image, with boxes hand-drawn around sections of hand-written notes, and split them up into seperate images
+2) Allow user to select sections of PDF files
+3) Take one (or more) of the images, and scale theem with different scaling factors, have the user print them out, to derive a maximum scaling factor (the larger the scaling factor, the smaller the image)
+4) Do approximate bin packing (right now, I use a greedy heuristic to assign each image to a page, and then run rectangle packing on each page)
+5) Implement an exact bin packing algorithm (slower, but more optimal)

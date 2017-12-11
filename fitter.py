@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageSequence, ImageDraw
 import math
 from spp.ph import phspprg
 from spp import visualize
@@ -121,7 +121,8 @@ for i in range(0, num_pages):
     else:
         rectangles = [x[1] for x in results]
         visualize(page.width_pixels, page.height_pixels, rectangles)
-        page_image = Image.new('RGBA', (page.width_pixels, page.height_pixels), (255,255,255))
+        page_image = Image.new('RGB', (page.width_pixels, page.height_pixels), (255, 255, 255))
+        black_rectangles = list()
         for j in range(0, len(rectangles)):
             rectangle = rectangles[j]
             print(rectangle)
@@ -141,7 +142,13 @@ for i in range(0, num_pages):
             if flipped:
                 image = image.rotate(90, expand=True)
             resized_image = image.resize((int(new_width), int(new_height)))
-            page_image.paste(resized_image, (x, page.height_pixels - (y + int(new_height))))
-        page_image.save('page_{0}.png'.format(i))
+            upper_left = (x, page.height_pixels - (y + int(new_height)))
+            page_image.paste(resized_image, upper_left)
+            black_rectangles.append([upper_left, (upper_left[0] + new_width, upper_left[1] + new_height)])
+        page_image_draw = ImageDraw.Draw(page_image)
+        for points in black_rectangles:
+            page_image_draw.rectangle(points, fill=None, outline=(0, 0, 0))
+            
+        page_image.save('page_{0}.pdf'.format(i))
             
             

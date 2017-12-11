@@ -96,7 +96,7 @@ class Page:
         
     
 
-image_names = ['one.jpg', 'two.jpg', 'three.png', 'four.jpg', 'five.jpg', 'six.jpg', 'seven.jpg']
+image_names = ['one.jpg', 'two.jpg', 'three.png', 'four.jpg', 'five.jpg', 'six.jpg', 'seven.jpg', 'eight.png', 'nine.png']
 width = 8.5
 height = 11
 num_pages = 2
@@ -121,7 +121,7 @@ for i in range(0, num_pages):
     else:
         rectangles = [x[1] for x in results]
         visualize(page.width_pixels, page.height_pixels, rectangles)
-        page_image = Image.new('RGB', (page.width_pixels, page.height_pixels))
+        page_image = Image.new('RGBA', (page.width_pixels, page.height_pixels), (255,255,255))
         for j in range(0, len(rectangles)):
             rectangle = rectangles[j]
             print(rectangle)
@@ -142,6 +142,6 @@ for i in range(0, num_pages):
                 image = image.rotate(90, expand=True)
             resized_image = image.resize((int(new_width), int(new_height)))
             page_image.paste(resized_image, (x, page.height_pixels - (y + int(new_height))))
-        page_image.save('page_{0}.jpg'.format(i))
+        page_image.save('page_{0}.png'.format(i))
             
             

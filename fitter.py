@@ -1,5 +1,9 @@
 from PIL import Image
 import math
+from spp.ph import phspprg
+from spp import visualize
+from collections import namedtuple
+
 """
 This distributes k images, each with some area, onto n pages. 
 
@@ -10,9 +14,10 @@ def distribute(images, num_pages):
     images_sorted = sorted(images, key=lambda x: x.area(), reverse=True)
     image_assignment = [{'area': 0, 'images':[]} for page in range(0, num_pages)]
     for image in images_sorted:
+        print(image)
         lowest_area_page = min(image_assignment, key=lambda x: x['area'])
-        lowest_area_page.area += image.area()
-        lowest_area_page.images.append(image)
+        lowest_area_page['area'] += image.area()
+        lowest_area_page['images'].append(image)
     return image_assignment
 
 class NoFeasibleSolutionError(Exception):
@@ -22,32 +27,33 @@ class NoFeasiblePageFitError(NoFeasibleSolutionError):
         self.message = message
 
 class FitterImage:
-    def __init__(self, pil_image):
+    def __init__(self, pil_image, name):
         self.pil_image = pil_image
-        self.image_bb = image_bb
         self.width = pil_image.width
         self.height = pil_image.height
         self.scaling_factor = 1.0
+        self.name = name
     def getPILImage(self):
         return self.pil_image
     def getWidth(self):
-        return (1.0*self.width)/scaling_factor
+        return (1.0*self.width)/self.scaling_factor
     def getHeight(self):
-        return (1.0*self.height)/scaling_factor
+        return (1.0*self.height)/self.scaling_factor
     def area(self):
         return self.getWidth()*self.getHeight()
     def setScalingFactor(self, scaling_factor):
         self.scaling_factor = scaling_factor
     def getScalingFactor(self):
         return self.scaling_factor
-
+    def __repr__(self):
+        return 'FitterImage with name: {0} of height: {1}, width: {2}, area: {3}'.format(self.name, self.getHeight(), self.getWidth(), self.area())
     
 class Page:
     #images should a list of FitterImage objects
     def __init__(self, images, width_inches, height_inches):
         self.images = images
-        self.width_pixels = 300*width
-        self.height_pixels = 300*height
+        self.width_pixels = int(300*width)
+        self.height_pixels = int(300*height)
     def getImages(self):
         return self.images
     def testFit(self, scaling_factor):
@@ -70,27 +76,27 @@ class Page:
             return zip(self.images, rectangles)
         #so "low" is actually a higher scaling factor -- the higher the scaling factor, the smaller each image is relative to the page
         low = 2.0*high
-        height, rectangles = self.testfit(low)
+        height, rectangles = self.testFit(low)
         if low > self.height_pixels:
             raise NoFeasiblePageFitError('No way to fit images onto page')
         middle = (high + low)/2
         for x in range(0, 20):
-            height, rectangles = self.testfit(middle)
+            height, rectangles = self.testFit(middle)
             if height <= self.height_pixels:
                 low = middle
             else:
                 high = middle
             middle = (high + low)/2
-        height, rectangles = self.testfit(middle)
+        height, rectangles = self.testFit(middle)
         if height <= self.height_pixels:
             return zip(self.images, rectangles)
         else:
-            height, rectangles = self.testfit(low)
+            height, rectangles = self.testFit(low)
             return zip(self.images, rectangles)
         
     
 
-images = ['homework4-1.png', 'homework4-2.png', 'homework4-3.png', 'homework4-4.png']
+image_names = ['one.jpg', 'two.jpg', 'three.png', 'four.jpg', 'five.jpg', 'six.jpg', 'seven.jpg']
 width = 8.5
 height = 11
 num_pages = 2
@@ -98,20 +104,32 @@ num_pages = 2
 images = list()
 for im_name in image_names:
     image = Image.open(im_name)
-    images.append(image)
+    images.append(FitterImage(image, im_name))
 
-page_assigment = distribute(images, num_pages)
+page_assignment = distribute(images, num_pages)
 print('page assignment')
 print(page_assignment)
 pages = list()
 for i in range(0, num_pages):
-    fitter_images = [FitterImage(image) for image in pages_assigment[i]['images']]
+    fitter_images = [image for image in page_assignment[i]['images']]
     page = Page(fitter_images, width, height)
     pages.append(page)
     try:
-        height, rectangles = page.fitImagesOnPage()
+        results = page.fitImagesOnPage()
     except NoFeasiblePageFitError:
         print('no feasible page solution')
     else:
-        visualize(page.width_pixels, height, rectangles)
-    
+        rectangles = [x[1] for x in results]
+        visualize(page.width_pixels, page.height_pixels, rectangles)
+        page_image = Image.new('RGB', (page.width_pixels, page.height_pixels))
+        for j in range(0, len(rectangles)):
+            rectangle = rectangles[j]
+            x = int(rectangle[0])
+            y = int(rectangle[1])
+            new_width = int(rectangle[2])
+            new_height = int(rectangle[3])
+            resized_image = fitter_images[j].getPILImage().resize((new_width, new_height))
+            page_image.paste(resized_image, (x, y))
+        page_image.save('page_{0}.jpg'.format(i))
+            
+            
